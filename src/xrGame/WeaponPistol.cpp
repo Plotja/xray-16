@@ -22,9 +22,8 @@ void CWeaponPistol::OnH_B_Chield() { inherited::OnH_B_Chield(); }
 void CWeaponPistol::PlayAnimShow()
 {
     VERIFY(GetState() == eShowing);
-
     if (iAmmoElapsed == 0)
-        PlayHUDMotion("anm_show_empty", "anim_draw_empty", FALSE, this, GetState());
+        PlayHUDMotion("anm_show_empty", "anim_draw_empty", false, this, GetState());
     else
         inherited::PlayAnimShow();
 }
@@ -32,7 +31,7 @@ void CWeaponPistol::PlayAnimShow()
 void CWeaponPistol::PlayAnimBore()
 {
     if (iAmmoElapsed == 0)
-        PlayHUDMotion("anm_bore_empty", "anim_empty", TRUE, this, GetState());
+        PlayHUDMotion("anm_bore_empty", "anm_bore_empty", TRUE, this, GetState()); 
     else
         inherited::PlayAnimBore();
 }
@@ -40,47 +39,34 @@ void CWeaponPistol::PlayAnimBore()
 void CWeaponPistol::PlayAnimIdleSprint()
 {
     if (iAmmoElapsed == 0)
-    {
-        PlayHUDMotion("anm_idle_sprint_empty", "anim_empty", TRUE, NULL, GetState());
-    }
+        PlayHUDMotion("anm_idle_sprint_empty", "anim_idle", true, nullptr, GetState());
     else
-    {
         inherited::PlayAnimIdleSprint();
-    }
 }
 
 void CWeaponPistol::PlayAnimIdleMoving()
 {
     if (iAmmoElapsed == 0)
-    {
-        PlayHUDMotion("anm_idle_moving_empty", "anim_empty", TRUE, NULL, GetState());
-    }
+        PlayHUDMotion("anm_idle_moving_empty", "anim_idle", true, nullptr, GetState());
     else
-    {
         inherited::PlayAnimIdleMoving();
-    }
 }
 
 void CWeaponPistol::PlayAnimIdle()
 {
     if (TryPlayAnimIdle())
         return;
-
     if (iAmmoElapsed == 0)
-    {
-        PlayHUDMotion("anm_idle_empty", "anim_empty", TRUE, NULL, GetState());
-    }
+        PlayHUDMotion("anm_idle_empty", "anm_idle_empty", TRUE, NULL, GetState());
     else
-    {
         inherited::PlayAnimIdle();
-    }
 }
 
 void CWeaponPistol::PlayAnimAim()
 {
     if (iAmmoElapsed == 0)
-        PlayHUDMotion("anm_idle_aim_empty", "anim_empty", TRUE, NULL, GetState());
-    else
+        PlayHUDMotion("anm_idle_aim_empty", "anim_idle_aim_empty", true, nullptr, GetState());
+    else 
         inherited::PlayAnimAim();
 }
 
@@ -93,10 +79,7 @@ void CWeaponPistol::PlayAnimHide()
 {
     VERIFY(GetState() == eHiding);
     if (iAmmoElapsed == 0)
-    {
-        PlaySound("sndClose", get_LastFP());
-        PlayHUDMotion("anm_hide_empty", "anim_close", TRUE, this, GetState());
-    }
+        PlayHUDMotion("anm_hide_empty", "anim_holster", true, this, GetState());
     else
         inherited::PlayAnimHide();
 }
@@ -105,13 +88,9 @@ void CWeaponPistol::PlayAnimShoot()
 {
     VERIFY(GetState() == eFire);
     if (iAmmoElapsed > 1)
-    {
-        PlayHUDMotion("anm_shots", "anim_shoot", FALSE, this, GetState());
-    }
+        PlayHUDMotion("anm_shoot", "anim_shoot", FALSE, this, GetState());
     else
-    {
-        PlayHUDMotion("anm_shot_l", "anim_shoot_last", FALSE, this, GetState());
-    }
+        PlayHUDMotion("anm_shoot_last", "anim_shoot_last", FALSE, this, GetState());
 }
 
 void CWeaponPistol::switch2_Reload() { inherited::switch2_Reload(); }

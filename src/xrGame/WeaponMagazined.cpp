@@ -32,7 +32,6 @@ CWeaponMagazined::CWeaponMagazined(ESoundTypes eSoundType) : CWeapon()
     m_eSoundEmptyClick = ESoundTypes(SOUND_TYPE_WEAPON_EMPTY_CLICKING | eSoundType);
 
     m_eSoundReload = ESoundTypes(SOUND_TYPE_WEAPON_RECHARGING | eSoundType);
-    m_eSoundReloadEmpty = ESoundTypes(SOUND_TYPE_WEAPON_RECHARGING | eSoundType);
 
     m_sounds_enabled = true;
 
@@ -82,9 +81,9 @@ void CWeaponMagazined::Load(LPCSTR section)
 
     m_sounds.LoadSound(section, "snd_empty", "sndEmptyClick", false, m_eSoundEmptyClick);
     m_sounds.LoadSound(section, "snd_reload", "sndReload", true, m_eSoundReload);
+    m_sounds.LoadSound(section, "snd_reload_empty", "sndReloadEmpty", true, m_eSoundReloadEmpty);
 
-    if (WeaponSoundExist(section, "snd_reload_empty"))
-        m_sounds.LoadSound(section, "snd_reload_empty", "sndReloadEmpty", true, m_eSoundReloadEmpty);
+
     if (WeaponSoundExist(section, "snd_reload_misfire"))
         m_sounds.LoadSound(section, "snd_reload_misfire", "sndReloadMisfire", true, m_eSoundReloadMisfire);
 
@@ -378,12 +377,16 @@ void CWeaponMagazined::ReloadMagazine()
         (!m_pCurrentAmmo || xr_strcmp(m_pCurrentAmmo->cNameSect(), *m_magazine.back().m_ammoSect)))
         UnloadMagazine();
 
+    int currMaxAmmoInWeapon = iMagazineSize;
+    if (iAmmoElapsed > 0)
+        currMaxAmmoInWeapon++;
+
     VERIFY((u32)iAmmoElapsed == m_magazine.size());
 
     if (m_DefaultCartridge.m_LocalAmmoType != m_ammoType)
         m_DefaultCartridge.Load(m_ammoTypes[m_ammoType].c_str(), m_ammoType);
     CCartridge l_cartridge = m_DefaultCartridge;
-    while (iAmmoElapsed < iMagazineSize)
+    while (iAmmoElapsed < currMaxAmmoInWeapon)
     {
         if (!unlimited_ammo())
         {
@@ -401,7 +404,7 @@ void CWeaponMagazined::ReloadMagazine()
     if (m_pCurrentAmmo && !m_pCurrentAmmo->m_boxCurr && OnServer())
         m_pCurrentAmmo->SetDropManual(true);
 
-    if (iMagazineSize > iAmmoElapsed)
+    if (iMagazineSize > currMaxAmmoInWeapon)
     {
         m_bLockType = true;
         ReloadMagazine();
@@ -488,9 +491,6 @@ void CWeaponMagazined::UpdateSounds()
     m_sounds.SetPosition("sndHide", P);
     //. nah	m_sounds.SetPosition("sndShot", P);
     m_sounds.SetPosition("sndReload", P);
-
-    if (m_sounds.FindSoundItem("sndReloadEmpty", false))
-        m_sounds.SetPosition("sndReloadEmpty", P);
 
     //. nah	m_sounds.SetPosition("sndEmptyClick", P);
 }
@@ -745,10 +745,7 @@ void CWeaponMagazined::PlayReloadSound()
         else
         {
             if (iAmmoElapsed == 0)
-                if (m_sounds.FindSoundItem("sndReloadEmpty", false))
-                    PlaySound("sndReloadEmpty", get_LastFP());
-                else
-                    PlaySound("sndReload", get_LastFP());
+                PlaySound("sndReloadEmpty", get_LastFP());
             else
                 PlaySound("sndReload", get_LastFP());
         }
@@ -1131,10 +1128,7 @@ void CWeaponMagazined::PlayAnimReload()
     else
     {
         if (iAmmoElapsed == 0)
-            if (isHUDAnimationExist("anm_reload_empty"))
-                PlayHUDMotion("anm_reload_empty", true, this, state);
-            else
-                PlayHUDMotion("anm_reload", "anim_reload", true, this, state);
+            PlayHUDMotion("anm_reload_empty", "anim_reload_empty", true, this, state);
         else
             PlayHUDMotion("anm_reload", "anim_reload", true, this, state);
     }
@@ -1459,12 +1453,6 @@ bool CWeaponMagazined::install_upgrade_impl(LPCSTR section, bool test)
     }
     result |= result2;
 
-    result2 = process_if_exists_set(section, "snd_reload_empty", &CInifile::r_string, str, test);
-    if (result2 && !test)
-    {
-        m_sounds.LoadSound(section, "snd_reload_empty", "sndReloadEmpty", true, m_eSoundReloadEmpty);
-    }
-    result |= result2;
 
     // snd_shoot1     = weapons\ak74u_shot_1 ??
     // snd_shoot2     = weapons\ak74u_shot_2 ??
