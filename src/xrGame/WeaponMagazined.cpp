@@ -32,6 +32,10 @@ CWeaponMagazined::CWeaponMagazined(ESoundTypes eSoundType) : CWeapon()
     m_eSoundEmptyClick = ESoundTypes(SOUND_TYPE_WEAPON_EMPTY_CLICKING | eSoundType);
 
     m_eSoundReload = ESoundTypes(SOUND_TYPE_WEAPON_RECHARGING | eSoundType);
+    m_eSoundReloadEmpty = ESoundTypes(SOUND_TYPE_WEAPON_RECHARGING | eSoundType);
+    m_eSoundReloadMisfire = ESoundTypes(SOUND_TYPE_WEAPON_RECHARGING | eSoundType);
+    m_eSoundReloadMisfireLast = ESoundTypes(SOUND_TYPE_WEAPON_RECHARGING | eSoundType);
+
 
     m_sounds_enabled = true;
 
@@ -82,10 +86,9 @@ void CWeaponMagazined::Load(LPCSTR section)
     m_sounds.LoadSound(section, "snd_empty", "sndEmptyClick", false, m_eSoundEmptyClick);
     m_sounds.LoadSound(section, "snd_reload", "sndReload", true, m_eSoundReload);
     m_sounds.LoadSound(section, "snd_reload_empty", "sndReloadEmpty", true, m_eSoundReloadEmpty);
+    m_sounds.LoadSound(section, "snd_reload_jammed", "snd_reload_jammed", true, m_eSoundReloadMisfire);
+    m_sounds.LoadSound(section, "snd_reload_jammed_last", "snd_reload_jammed_last", true, m_eSoundReloadMisfireLast);
 
-
-    if (WeaponSoundExist(section, "snd_reload_misfire"))
-        m_sounds.LoadSound(section, "snd_reload_misfire", "sndReloadMisfire", true, m_eSoundReloadMisfire);
 
     m_sSndShotCurrent = "sndShot";
 
@@ -200,6 +203,12 @@ void CWeaponMagazined::Reload()
     TryReload();
 }
 
+void CWeaponMagazined::Revive() 
+{
+    SetPending(true);
+    SwitchState(eRevive);
+}
+    
 bool CWeaponMagazined::TryReload()
 {
     if (m_pInventory)
@@ -212,7 +221,7 @@ bool CWeaponMagazined::TryReload()
 
         m_pCurrentAmmo = smart_cast<CWeaponAmmo*>(m_pInventory->GetAny(m_ammoTypes[m_ammoType].c_str()));
 
-        if (IsMisfire() && iAmmoElapsed)
+        if (iAmmoElapsed)
         {
             SetPending(true);
             SwitchState(eReload);
@@ -318,13 +327,17 @@ void CWeaponMagazined::UnloadMagazine(bool spawn_ammo)
     }
 }
 
-void CWeaponMagazined::ReloadMagazine()
+void CWeaponMagazined::ReviveWeapon()
 {
-    m_BriefInfo_CalcFrame = 0;
-
     //устранить осечку при перезарядке
     if (IsMisfire())
         bMisfire = false;
+    iAmmoElapsed--;
+}
+
+void CWeaponMagazined::ReloadMagazine()
+{
+    m_BriefInfo_CalcFrame = 0;
 
     if (!m_bLockType)
     {
@@ -444,6 +457,11 @@ void CWeaponMagazined::OnStateSwitch(u32 S, u32 oldState)
             switch2_Hiding();
         break;
     case eHidden: switch2_Hidden(); break;
+    case eRevive:
+        if (owner)
+            m_sounds_enabled = owner->CanPlayShHdRldSounds();
+        switch2_Revive();
+        break;
     }
 }
 
@@ -461,6 +479,7 @@ void CWeaponMagazined::UpdateCL()
         case eShowing:
         case eHiding:
         case eReload:
+        case eRevive:
         case eIdle:
         {
             fShotTimeCounter -= dt;
@@ -644,6 +663,10 @@ void CWeaponMagazined::OnAnimationEnd(u32 state)
         ReloadMagazine();
         SwitchState(eIdle);
         break; // End of reload animation
+    case eRevive: 
+        ReviveWeapon();
+        SwitchState(eIdle);
+        break;
     case eHiding:
         SwitchState(eHidden);
         break; // End of Hide
@@ -734,23 +757,18 @@ void CWeaponMagazined::PlayReloadSound()
 {
     if (m_sounds_enabled)
     {
-        if (bMisfire)
-        {
-            //TODO: make sure correct sound is loaded in CWeaponMagazined::Load(LPCSTR section)
-            if (m_sounds.FindSoundItem("sndReloadMisfire", false))
-                PlaySound("sndReloadMisfire", get_LastFP());
-            else
-                PlaySound("sndReload", get_LastFP());
-        }
+        if (iAmmoElapsed == 0)
+            PlaySound("sndReloadEmpty", get_LastFP());
         else
-        {
-            if (iAmmoElapsed == 0)
-                PlaySound("sndReloadEmpty", get_LastFP());
-            else
-                PlaySound("sndReload", get_LastFP());
-        }
+            PlaySound("sndReload", get_LastFP());
     }
 }
+
+void CWeaponMagazined::PlayReviveSound() 
+{ 
+    PlaySound("snd_reload_jammed", get_LastFP());
+}
+
 
 void CWeaponMagazined::switch2_Reload()
 {
@@ -760,6 +778,14 @@ void CWeaponMagazined::switch2_Reload()
     PlayAnimReload();
     SetPending(true);
 }
+
+void CWeaponMagazined::switch2_Revive() 
+{ 
+    PlayReviveSound();
+    PlayAnimRevive();
+    SetPending(true);
+}
+
 void CWeaponMagazined::switch2_Hiding()
 {
     OnZoomOut();
@@ -801,15 +827,16 @@ bool CWeaponMagazined::Action(u16 cmd, u32 flags)
 
     switch (cmd)
     {
-    case kWPN_RELOAD:
-    {
+    case kWPN_RELOAD: {
         if (flags & CMD_START)
-            if (iAmmoElapsed < iMagazineSize || IsMisfire())
+        {
+            if (IsMisfire())
+                Revive();
+            else if (iAmmoElapsed <= iMagazineSize)
                 Reload();
-    }
+        }
         return true;
-    case kWPN_FIREMODE_PREV:
-    {
+    case kWPN_FIREMODE_PREV: {
         if (flags & CMD_START)
         {
             OnPrevFireMode();
@@ -817,8 +844,7 @@ bool CWeaponMagazined::Action(u16 cmd, u32 flags)
         };
     }
     break;
-    case kWPN_FIREMODE_NEXT:
-    {
+    case kWPN_FIREMODE_NEXT: {
         if (flags & CMD_START)
         {
             OnNextFireMode();
@@ -827,7 +853,8 @@ bool CWeaponMagazined::Action(u16 cmd, u32 flags)
     }
     break;
     }
-    return false;
+        return false;
+    }
 }
 
 bool CWeaponMagazined::CanAttach(PIItem pIItem)
@@ -1120,18 +1147,17 @@ void CWeaponMagazined::PlayAnimReload()
 {
     auto state = GetState();
     VERIFY(state == eReload);
-    if (bMisfire)
-        if (isHUDAnimationExist("anm_reload_misfire"))
-            PlayHUDMotion("anm_reload_misfire", true, this, state);
-        else
-            PlayHUDMotion("anm_reload", "anim_reload", true, this, state);
+    if (iAmmoElapsed == 0)
+        PlayHUDMotion("anm_reload_empty", "anim_reload_empty", true, this, state);
     else
-    {
-        if (iAmmoElapsed == 0)
-            PlayHUDMotion("anm_reload_empty", "anim_reload_empty", true, this, state);
-        else
-            PlayHUDMotion("anm_reload", "anim_reload", true, this, state);
-    }
+        PlayHUDMotion("anm_reload", "anim_reload", true, this, state);
+}
+
+void CWeaponMagazined::PlayAnimRevive() 
+{
+    auto state = GetState();
+    VERIFY(state == eRevive);
+    PlayHUDMotion("anm_reload_jammed", "anm_reload_jammed", true, this, state);
 }
 
 void CWeaponMagazined::PlayAnimAim() { PlayHUDMotion("anm_idle_aim", "anim_idle_aim", true, nullptr, GetState()); }

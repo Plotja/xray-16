@@ -30,6 +30,8 @@ protected:
     ESoundTypes m_eSoundReload;
     ESoundTypes m_eSoundReloadEmpty;
     ESoundTypes m_eSoundReloadMisfire;
+    ESoundTypes m_eSoundReloadMisfireLast;
+
 
     bool m_sounds_enabled;
     // General
@@ -46,6 +48,7 @@ protected:
     virtual void switch2_Hiding();
     virtual void switch2_Hidden();
     virtual void switch2_Showing();
+    void switch2_Revive();
 
     virtual void OnShot();
 
@@ -57,9 +60,11 @@ protected:
     virtual void UpdateSounds();
 
     bool TryReload();
+    void Revive();
 
 protected:
     virtual void ReloadMagazine();
+    void ReviveWeapon();
     void ApplySilencerKoeffs();
     void ResetSilencerKoeffs();
 
@@ -166,7 +171,10 @@ protected:
     virtual void PlayAnimIdle();
     virtual void PlayAnimShoot();
     virtual void PlayReloadSound();
+    virtual void PlayReviveSound();
     virtual void PlayAnimAim();
+    virtual void PlayAnimRevive();
+
 
     virtual int ShotsFired() { return m_iShotNum; }
     virtual float GetWeaponDeterioration();

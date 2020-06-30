@@ -28,7 +28,8 @@ public:
     virtual void PlayAnimShoot();
     virtual void PlayAnimBore();
     virtual void PlayAnimAim();
-
+    virtual void PlayAnimRevive();
+    virtual void PlayReviveSound();
     virtual void UpdateSounds();
 
 protected:

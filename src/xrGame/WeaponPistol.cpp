@@ -75,6 +75,22 @@ void CWeaponPistol::PlayAnimReload()
     inherited::PlayAnimReload(); //AVO: refactored to use grand-parent (CWeaponMagazined) function
 }
 
+void CWeaponPistol::PlayAnimRevive() 
+{ 
+    if (iAmmoElapsed > 1)
+        inherited::PlayAnimRevive();
+    else
+        PlayHUDMotion("anm_reload_jammed_last", "anm_reload_jammed_last", true, nullptr, GetState());
+}
+
+void CWeaponPistol::PlayReviveSound() 
+{
+    if (iAmmoElapsed > 1)
+        inherited::PlayReviveSound();
+    else
+        PlaySound("snd_reload_jammed_last", get_LastFP());
+}
+
 void CWeaponPistol::PlayAnimHide()
 {
     VERIFY(GetState() == eHiding);
