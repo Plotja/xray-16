@@ -332,7 +332,6 @@ void CWeaponMagazined::ReviveWeapon()
     //устранить осечку при перезарядке
     if (IsMisfire())
         bMisfire = false;
-    iAmmoElapsed--;
 }
 
 void CWeaponMagazined::ReloadMagazine()
@@ -457,11 +456,20 @@ void CWeaponMagazined::OnStateSwitch(u32 S, u32 oldState)
             switch2_Hiding();
         break;
     case eHidden: switch2_Hidden(); break;
-    case eRevive:
+    case eRevive: 
+    {
         if (owner)
             m_sounds_enabled = owner->CanPlayShHdRldSounds();
         switch2_Revive();
         break;
+    }
+    case eEmptyClick: 
+    {
+        if (owner)
+            m_sounds_enabled = owner->CanPlayShHdRldSounds();
+        switch2_EmptyClick();
+        break;
+    }
     }
 }
 
@@ -478,6 +486,7 @@ void CWeaponMagazined::UpdateCL()
         {
         case eShowing:
         case eHiding:
+        case eEmptyClick:
         case eReload:
         case eRevive:
         case eIdle:
@@ -638,7 +647,7 @@ void CWeaponMagazined::OnShot()
     // Camera
     AddShotEffector();
 
-    // Animation
+    // Animationкум
     PlayAnimShoot();
 
     // Shell Drop
@@ -654,7 +663,11 @@ void CWeaponMagazined::OnShot()
     StartSmokeParticles(get_LastFP(), vel);
 }
 
-void CWeaponMagazined::OnEmptyClick() { PlaySound("sndEmptyClick", get_LastFP()); }
+void CWeaponMagazined::OnEmptyClick() 
+{ 
+    SwitchState(eEmptyClick);
+}
+
 void CWeaponMagazined::OnAnimationEnd(u32 state)
 {
     switch (state)
@@ -676,6 +689,7 @@ void CWeaponMagazined::OnAnimationEnd(u32 state)
     case eIdle:
         switch2_Idle();
         break; // Keep showing idle
+    case eEmptyClick: SwitchState(eIdle); break;
     }
     inherited::OnAnimationEnd(state);
 }
@@ -769,6 +783,10 @@ void CWeaponMagazined::PlayReviveSound()
     PlaySound("snd_reload_jammed", get_LastFP());
 }
 
+void CWeaponMagazined::PlayEmptyClickSound()
+{ 
+    PlaySound("sndEmptyClick", get_LastFP()); 
+}
 
 void CWeaponMagazined::switch2_Reload()
 {
@@ -784,6 +802,22 @@ void CWeaponMagazined::switch2_Revive()
     PlayReviveSound();
     PlayAnimRevive();
     SetPending(true);
+}
+
+void CWeaponMagazined::switch2_EmptyClick()
+{
+    if (bMisfire)
+    {
+        PlayEmptyClickSound();
+        SetPending(true);
+        PlayAnimJammedClick();
+    }
+    else
+    {
+        PlayEmptyClickSound();
+        SetPending(true);
+        PlayAnimEmptyClick();
+    }
 }
 
 void CWeaponMagazined::switch2_Hiding()
@@ -1158,6 +1192,21 @@ void CWeaponMagazined::PlayAnimRevive()
     auto state = GetState();
     VERIFY(state == eRevive);
     PlayHUDMotion("anm_reload_jammed", "anm_reload_jammed", true, this, state);
+}
+
+void CWeaponMagazined::PlayAnimEmptyClick()
+{
+    auto state = GetState();
+    VERIFY(state == eEmptyClick);
+    PlayHUDMotion("anm_fakeshoot_empty", "anm_fakeshoot_empty", true, nullptr, GetState());
+}
+
+
+void CWeaponMagazined::PlayAnimJammedClick()
+{
+    auto state = GetState();
+    VERIFY(state == eEmptyClick);
+    PlayHUDMotion("anm_fakeshoot_jammed", "anm_fakeshoot_jammed", true, nullptr, GetState());
 }
 
 void CWeaponMagazined::PlayAnimAim() { PlayHUDMotion("anm_idle_aim", "anim_idle_aim", true, nullptr, GetState()); }

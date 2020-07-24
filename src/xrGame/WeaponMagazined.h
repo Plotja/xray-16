@@ -49,6 +49,7 @@ protected:
     virtual void switch2_Hidden();
     virtual void switch2_Showing();
     void switch2_Revive();
+    void switch2_EmptyClick();
 
     virtual void OnShot();
 
@@ -172,8 +173,12 @@ protected:
     virtual void PlayAnimShoot();
     virtual void PlayReloadSound();
     virtual void PlayReviveSound();
+    void PlayEmptyClickSound();
     virtual void PlayAnimAim();
     virtual void PlayAnimRevive();
+    void PlayAnimEmptyClick();
+    void PlayAnimJammedClick();
+
 
 
     virtual int ShotsFired() { return m_iShotNum; }

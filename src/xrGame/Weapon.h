@@ -105,6 +105,7 @@ public:
         eMagEmpty,
         eSwitch,
         eRevive,
+        eEmptyClick,
     };
     enum EWeaponSubStates
     {
