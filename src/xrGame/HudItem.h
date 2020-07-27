@@ -182,5 +182,7 @@ public:
 
     virtual CHudItem* cast_hud_item() { return this; }
     void PlayAnimIdleMovingCrouch(); //AVO: new crouch idle animation
+    void PlayAnimIdleMovingCrouchAccel();
+    void PlayAnimIdleMovingAccel(); 
     bool isHUDAnimationExist(pcstr anim_name) const;
 };

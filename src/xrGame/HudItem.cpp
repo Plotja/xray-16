@@ -357,14 +357,24 @@ bool CHudItem::TryPlayAnimIdle()
             }
             if (pActor->AnyMove())
             {
-                if (!st.bCrouch)
+                if (st.bCrouch && st.bAccel)
                 {
-                    PlayAnimIdleMoving();
+                    PlayAnimIdleMovingCrouchAccel();
+                    return true;
+                }
+                if (st.bAccel)
+                {
+                    PlayAnimIdleMovingAccel();
                     return true;
                 }
                 if (st.bCrouch && isHUDAnimationExist("anm_idle_moving_crouch"))
                 {
                     PlayAnimIdleMovingCrouch();
+                    return true;
+                }
+                else
+                {
+                    PlayAnimIdleMoving();
                     return true;
                 }
             }
@@ -399,13 +409,23 @@ bool CHudItem::isHUDAnimationExist(pcstr anim_name) const
 }
 
 void CHudItem::PlayAnimIdleMovingCrouch() { PlayHUDMotion("anm_idle_moving_crouch", "anim_idle", true, nullptr, GetState()); }
+void CHudItem::PlayAnimIdleMovingAccel()
+{
+    PlayHUDMotion("anm_idle_moving_slow", "anim_idle", true, nullptr, GetState());
+}
+
+void CHudItem::PlayAnimIdleMovingCrouchAccel()
+{
+    PlayHUDMotion("anm_idle_moving_crouch_slow", "anim_idle", true, nullptr, GetState());
+}
+
 void CHudItem::PlayAnimIdleMoving() { PlayHUDMotion("anm_idle_moving", "anim_idle", true, nullptr, GetState()); }
 void CHudItem::PlayAnimIdleSprint() { PlayHUDMotion("anm_idle_sprint", "anim_idle", true, nullptr, GetState()); }
 void CHudItem::OnMovementChanged(ACTOR_DEFS::EMoveCommand cmd)
 {
     if (GetState() == eIdle && !m_bStopAtEndAnimIsRunning)
     {
-        if ((cmd == ACTOR_DEFS::mcSprint) || (cmd == ACTOR_DEFS::mcAnyMove))
+        if ((cmd == ACTOR_DEFS::mcAnyState) || (cmd == ACTOR_DEFS::mcAnyMove))
         {
             PlayAnimIdle();
             ResetSubStateTime();

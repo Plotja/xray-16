@@ -73,7 +73,7 @@ u32 const player_state_move::get_u32_param()
     CEntity::SEntityState state;
     tmp_actor->g_State(state);
 
-    return state.bCrouch | (state.bSprint << 1) | (state.bJump << 2) | (state.bFall << 3);
+    return state.bCrouch | (state.bSprint << 1) | (state.bJump << 2) | (state.bFall << 3) | (state.bAccel << 4);
 }
 
 player_state_velocity::player_state_velocity(game_state_accumulator* owner) : inherited(owner) {}

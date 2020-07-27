@@ -405,9 +405,9 @@ void CActor::g_SetAnimation(u32 mstate_rl)
 
     if (this == Level().CurrentViewEntity())
     {
-        if ((mstate_rl & mcSprint) != (mstate_old & mcSprint))
+        if ((mstate_rl & mcAnyState) != (mstate_old & mcAnyState))
         {
-            g_player_hud->OnMovementChanged(mcSprint);
+            g_player_hud->OnMovementChanged(mcAnyState);
         }
         else if ((mstate_rl & mcAnyMove) != (mstate_old & mcAnyMove))
         {
