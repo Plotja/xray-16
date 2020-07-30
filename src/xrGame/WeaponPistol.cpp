@@ -104,8 +104,10 @@ void CWeaponPistol::PlayAnimShoot()
 {
     VERIFY(GetState() == eFire);
     if (iAmmoElapsed > 1)
-        PlayHUDMotion("anm_shoot", "anim_shoot", FALSE, this, GetState());
-    else
+        inherited::PlayAnimShoot();
+    else if (IsZoomed())
+        PlayHUDMotion("anm_shoot_aim_last", "anim_shoot_last", FALSE, this, GetState());
+    else 
         PlayHUDMotion("anm_shoot_last", "anim_shoot_last", FALSE, this, GetState());
 }
 
